@@ -14,6 +14,7 @@ point snake[100];
 int snake_length = 1;
 int direction = KEY_RIGHT;
 point food;
+int score = 0;
 
 void init() {
   initscr();
@@ -27,8 +28,8 @@ void init() {
   snake[0].x = WIDTH / 2;
   snake[0].y = HEIGHT / 2;
 
-  food.x = rand() % WIDTH;
-  food.y = rand() % HEIGHT;
+  food.x = rand() % (WIDTH - 2) + 1;
+  food.y = rand() % (HEIGHT - 2) + 1;
 
   refresh();
 }
@@ -36,25 +37,47 @@ void init() {
 void draw() {
   clear();
 
-  for (int i = 0; i < snake_length; i++) {
-    mvprintw(snake[i].y, snake[i].x, "O");
+  // Draw border
+  for (int i = 0; i < WIDTH; i++) {
+      mvprintw(0, i, "#");
+      mvprintw(HEIGHT - 1, i, "#");
+    }
+
+    for (int i = 0; i < HEIGHT; i++) {
+      mvprintw(i, 0, "#");
+      mvprintw(i, WIDTH - 1, "#");
+    }
+
+    // Draw snake
+    for (int i = 0; i < snake_length; i++) {
+      if (i == 0) {
+        mvprintw(snake[i].y, snake[i].x, "@");
+      } else {
+        mvprintw(snake[i].y, snake[i].x, "o");
+      }
+    }
+
+    // Draw food
+    mvprintw(food.y, food.x, "*");
+
+    // Draw score
+    mvprintw(0, (WIDTH / 2) - 4, "Score: %d", score);
+
+    refresh();
   }
 
-  mvprintw(food.y, food.x, "X");
+  void update() {
+    for (int i = snake_length - 1; i > 0; i--) {
+      snake[i] = snake[i - 1];
+    }
 
-  refresh();
-}
+    switch (direction) {
+    case KEY_UP:
+      snake[0].y--;
+      break;
 
-void update() {
-  for (int i = snake_length - 1; i > 0; i--) {
-    snake[i] = snake[i - 1];
-  }
 
-  switch (direction) {
-  case KEY_UP:
-    snake[0].y--;
-    break;
-  case KEY_DOWN:
+case KEY_DOWN:
     snake[0].y++;
     break;
   case KEY_LEFT:
@@ -67,36 +90,60 @@ void update() {
 
   if (snake[0].x == food.x && snake[0].y == food.y) {
     snake_length++;
-    food.x = rand() % WIDTH;
-    food.y = rand() % HEIGHT;
+    score += 10;
+    food.x = rand() % (WIDTH - 2) + 1;
+    food.y = rand() % (HEIGHT - 2) + 1;
   }
 
-  if (snake[0].x < 0 || snake[0].x >= WIDTH || snake[0].y < 0 || snake[0].y >= HEIGHT) {
+  if (snake[0].x < 1 || snake[0].x >= WIDTH - 1 || snake[0].y < 1 || snake[0].y >= HEIGHT - 1) {
     endwin();
+    printf("Game Over! Your final score is %d.\n", score);
     exit(0);
   }
 
   for (int i = 1; i < snake_length; i++) {
     if (snake[0].x == snake[i].x && snake[0].y == snake[i].y) {
       endwin();
+      printf("Game Over! Your final score is %d.\n", score);
       exit(0);
     }
-  }
-}
-
-int main() {
-  init();
-
-  while (1) {
-    draw();
-    update();
-    usleep(100000);
-    int ch = getch();
-    if (ch != ERR) {
-      direction = ch;
+      }
     }
-  }
 
-  endwin();
-  return 0;
-}
+    int main() {
+      init();
+
+      while (1) {
+        draw();
+        update();
+        usleep(100000);
+        int ch = getch();
+        if (ch != ERR) {
+          switch (ch) {
+            case KEY_UP:
+              if (direction != KEY_DOWN) {
+                direction = KEY_UP;
+              }
+              break;
+            case KEY_DOWN:
+              if (direction != KEY_UP) {
+                direction = KEY_DOWN;
+              }
+              break;
+            case KEY_LEFT:
+              if (direction != KEY_RIGHT) {
+                direction = KEY_LEFT;
+              }
+              break;
+            case KEY_RIGHT:
+              if (direction != KEY_LEFT) {
+                direction = KEY_RIGHT;
+              }
+              break;
+          }
+        }
+      }
+
+      endwin();
+      return 0;
+    }
